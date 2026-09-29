@@ -147,3 +147,146 @@ def predict(req: PredictionRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/decision-support")
+def get_decision_support():
+    """
+    Returns model-driven intervention recommendations based on feature importance.
+    Recommendations are linked to the top model features — not causal claims.
+    """
+    # Group feature importances by parent feature name
+    feature_groups = {
+        "hour": 0.0,
+        "speed_limit": 0.0,
+        "urban_or_rural_area": 0.0,
+        "light_conditions": 0.0,
+        "road_type": 0.0,
+        "weather_conditions": 0.0,
+        "road_surface_conditions": 0.0,
+        "day_of_week": 0.0,
+    }
+    for fi in feature_importances:
+        for key in feature_groups:
+            if fi["feature"].startswith(key):
+                feature_groups[key] += fi["importance"]
+
+    # Sort groups by importance
+    sorted_groups = sorted(feature_groups.items(), key=lambda x: x[1], reverse=True)
+
+    # Map each feature to a human-readable intervention
+    intervention_map = {
+        "hour": {
+            "label": "Time of Day (Hour)",
+            "importance": feature_groups["hour"],
+            "insight": "The model weighted time of day as the single most important factor. Accident patterns vary significantly across rush hours and late-night periods.",
+            "recommendations": [
+                "Deploy additional traffic enforcement during peak accident-risk hours (early morning and late evening).",
+                "Increase road signage and lighting in high-risk time windows.",
+                "Run targeted awareness campaigns around commute times."
+            ],
+            "priority": "HIGH",
+            "color": "red"
+        },
+        "speed_limit": {
+            "label": "Speed Limit",
+            "importance": feature_groups["speed_limit"],
+            "insight": "Speed limit is the second most influential model factor. Higher speed environments are strongly associated with greater severity risk.",
+            "recommendations": [
+                "Consider adaptive speed limits on high-speed roads during poor weather.",
+                "Increase speed camera presence on roads with 60–70 mph limits.",
+                "Evaluate feasibility of lowering speed limits in identified high-risk corridors."
+            ],
+            "priority": "HIGH",
+            "color": "red"
+        },
+        "urban_or_rural_area": {
+            "label": "Urban vs Rural Environment",
+            "importance": feature_groups["urban_or_rural_area"],
+            "insight": "Whether an accident occurs in an urban or rural area significantly influences model predictions. Rural roads often lack barriers and lighting.",
+            "recommendations": [
+                "Prioritise safety audits on rural single-carriageway roads.",
+                "Improve road markings and reflective signage on rural routes.",
+                "Invest in rural road infrastructure: crash barriers, better shoulders."
+            ],
+            "priority": "HIGH",
+            "color": "orange"
+        },
+        "light_conditions": {
+            "label": "Light Conditions",
+            "importance": feature_groups["light_conditions"],
+            "insight": "Lighting conditions at the time of accident is a significant model factor. Darkness — particularly without street lighting — correlates with more severe outcomes.",
+            "recommendations": [
+                "Audit and upgrade street lighting coverage on high-traffic rural roads.",
+                "Mandate reflective road markings on unlit roads.",
+                "Launch night-driving awareness campaigns targeting young drivers."
+            ],
+            "priority": "MEDIUM",
+            "color": "amber"
+        },
+        "road_type": {
+            "label": "Road Type",
+            "importance": feature_groups["road_type"],
+            "insight": "Road type — such as single carriageway, dual carriageway, or roundabout — affects the model's severity prediction. Single carriageways present higher risk.",
+            "recommendations": [
+                "Install physical separation barriers on high-risk single carriageway stretches.",
+                "Review junction design at roundabouts with high accident frequency.",
+                "Prioritise road type upgrades where feasible."
+            ],
+            "priority": "MEDIUM",
+            "color": "amber"
+        },
+        "weather_conditions": {
+            "label": "Weather Conditions",
+            "importance": feature_groups["weather_conditions"],
+            "insight": "Weather conditions influence the model's prediction, though environmental factors are often beyond direct control. Preparedness and alerting matter.",
+            "recommendations": [
+                "Issue real-time traffic alerts during rain, fog, and icy conditions.",
+                "Deploy dynamic warning signs on key routes during adverse weather.",
+                "Ensure gritting and de-icing protocols are responsive to forecasts."
+            ],
+            "priority": "MEDIUM",
+            "color": "blue"
+        },
+        "road_surface_conditions": {
+            "label": "Road Surface Conditions",
+            "importance": feature_groups["road_surface_conditions"],
+            "insight": "Wet or icy road surfaces are associated with different accident severity patterns in the model. Surface maintenance is a direct, actionable intervention.",
+            "recommendations": [
+                "Prioritise resurfacing programmes on high-accident-frequency roads.",
+                "Improve drainage on roads with recurring surface water issues.",
+                "Ensure gritting routes cover all key arterial roads during winter."
+            ],
+            "priority": "LOW",
+            "color": "green"
+        },
+        "day_of_week": {
+            "label": "Day of Week",
+            "importance": feature_groups["day_of_week"],
+            "insight": "The day of the week influences accident severity patterns. Weekend nights and weekday morning peaks show distinct risk profiles in the model.",
+            "recommendations": [
+                "Schedule additional patrol presence on Friday and Saturday nights.",
+                "Run weekend-specific drink-drive awareness campaigns.",
+                "Adjust road maintenance schedules to avoid high-traffic weekday mornings."
+            ],
+            "priority": "LOW",
+            "color": "green"
+        }
+    }
+
+    # Build final ordered list
+    interventions = []
+    for feature_name, _ in sorted_groups:
+        if feature_name in intervention_map:
+            interventions.append(intervention_map[feature_name])
+
+    return {
+        "disclaimer": (
+            "These recommendations are derived from Random Forest feature importance scores — "
+            "a measure of which variables the model relied upon most during training. "
+            "They do not establish causation. They are intended as data-driven starting points "
+            "for traffic safety planning, not as definitive causal evidence."
+        ),
+        "model_algorithm": "Random Forest Classifier",
+        "total_features_analysed": len(feature_importances),
+        "interventions": interventions
+    }
