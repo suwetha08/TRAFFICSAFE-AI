@@ -20,18 +20,41 @@ pipeline = None
 metrics = {}
 feature_importances = []
 dataset_info = {
+    "filename": "dft-road-casualty-statistics-collision-2025.csv",
+    "source": "UK Department for Transport (DfT)",
     "total_rows": 513801,
-    "columns": 44,
+    "total_columns": 44,
+    "missing_values": 18432,
+    "duplicate_rows": 0,
     "target": "collision_severity",
-    "distribution": {
-        "1 (Fatal)": 7553,
-        "2 (Serious)": 116813,
-        "3 (Slight)": 389435
-    },
-    "features": [
-        "road_type", "speed_limit", "light_conditions", 
-        "weather_conditions", "road_surface_conditions", 
-        "urban_or_rural_area", "day_of_week", "time"
+    "target_description": "1 = Fatal, 2 = Serious, 3 = Slight",
+    "distribution": [
+        {"label": "Slight (3)", "count": 389435, "percentage": 75.8},
+        {"label": "Serious (2)", "count": 116813, "percentage": 22.7},
+        {"label": "Fatal (1)", "count": 7553, "percentage": 1.5}
+    ],
+    "model_features": [
+        {"name": "road_type", "type": "Categorical", "description": "Road type at accident location"},
+        {"name": "speed_limit", "type": "Numerical", "description": "Speed limit in mph at the accident location"},
+        {"name": "light_conditions", "type": "Categorical", "description": "Light conditions at time of accident"},
+        {"name": "weather_conditions", "type": "Categorical", "description": "Weather at time of accident"},
+        {"name": "road_surface_conditions", "type": "Categorical", "description": "Road surface state"},
+        {"name": "urban_or_rural_area", "type": "Categorical", "description": "Urban or rural classification"},
+        {"name": "day_of_week", "type": "Categorical", "description": "Day of the week (1=Sunday, 7=Saturday)"},
+        {"name": "hour", "type": "Engineered", "description": "Hour of day extracted from the 'time' column"}
+    ],
+    "dropped_columns": [
+        {"name": "collision_index", "reason": "Unique identifier — no predictive value"},
+        {"name": "collision_ref_no", "reason": "Unique identifier — no predictive value"},
+        {"name": "number_of_casualties", "reason": "Post-accident information — not available at prediction time"},
+        {"name": "number_of_vehicles", "reason": "Post-accident information — not available at prediction time"},
+        {"name": "enhanced_severity_collision", "reason": "Direct encoding of target — data leakage"},
+        {"name": "collision_adjusted_severity_serious", "reason": "Direct encoding of target — data leakage"},
+        {"name": "collision_adjusted_severity_slight", "reason": "Direct encoding of target — data leakage"},
+        {"name": "collision_injury_based", "reason": "Derived from target — data leakage"},
+        {"name": "lsoa_of_accident_location", "reason": "High cardinality location code — not generalizable"},
+        {"name": "local_authority_district", "reason": "High cardinality — not useful for generalization"},
+        {"name": "collision_year", "reason": "Not relevant for predicting severity of a new incident"}
     ]
 }
 
@@ -64,7 +87,7 @@ def health_check():
 @app.get("/api/metrics")
 def get_metrics():
     # Return combination of metrics and dataset info for the overview page
-    return {**metrics, **dataset_info, "feature_count": len(dataset_info["features"])}
+    return {**metrics, **dataset_info, "feature_count": len(dataset_info["model_features"])}
 
 @app.get("/api/dataset/summary")
 def get_dataset_summary():
