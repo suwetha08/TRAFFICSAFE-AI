@@ -61,10 +61,13 @@ dataset_info = {
 MODEL_PATH = "../models/accident_severity_pipeline.pkl"
 METRICS_PATH = "../models/metrics.json"
 FI_PATH = "../models/feature_importance.json"
+DATASET_PATH = "../data/dft-road-casualty-statistics-collision-2025.csv"
+
+map_data = []
 
 @app.on_event("startup")
 def load_assets():
-    global pipeline, metrics, feature_importances
+    global pipeline, metrics, feature_importances, map_data
     
     if os.path.exists(MODEL_PATH):
         pipeline = joblib.load(MODEL_PATH)
@@ -76,6 +79,23 @@ def load_assets():
     if os.path.exists(FI_PATH):
         with open(FI_PATH, "r") as f:
             feature_importances = json.load(f)
+            
+    if os.path.exists(DATASET_PATH):
+        # Load a random sample of 200 points for the map to keep it lightweight
+        try:
+            # We skip bad lines to avoid errors
+            df_map = pd.read_csv(DATASET_PATH, usecols=['latitude', 'longitude', 'collision_severity', 'time', 'speed_limit'], on_bad_lines='skip')
+            df_map = df_map.dropna(subset=['latitude', 'longitude'])
+            df_map = df_map.sample(200, random_state=42)
+            
+            # Map severity to risk level
+            risk_map = {1: "CRITICAL", 2: "HIGH", 3: "MODERATE"}
+            
+            map_data = df_map.assign(
+                risk_level=df_map['collision_severity'].map(risk_map)
+            ).to_dict(orient='records')
+        except Exception as e:
+            print(f"Failed to load map data: {e}")
 
 @app.get("/api/health")
 def health_check():
@@ -134,11 +154,19 @@ def predict(req: PredictionRequest):
         probas = pipeline.predict_proba(input_data)[0]
         
         # Mapping labels
-        label_map = {1: "Fatal", 2: "Serious", 3: "Slight"}
+        pred_label = label_map.get(int(pred), "Unknown")
+        
+        # Highway Guardian Risk Mapping
+        risk_map = {
+            "Fatal": "CRITICAL",
+            "Serious": "HIGH",
+            "Slight": "MODERATE"
+        }
         
         return {
             "predicted_class": int(pred),
-            "predicted_label": label_map.get(int(pred), "Unknown"),
+            "predicted_label": pred_label,
+            "risk_level": risk_map.get(pred_label, "UNKNOWN"),
             "probabilities": {
                 "Fatal": probas[0] if len(probas) > 0 else 0,
                 "Serious": probas[1] if len(probas) > 1 else 0,
@@ -289,4 +317,12 @@ def get_decision_support():
         "model_algorithm": "Random Forest Classifier",
         "total_features_analysed": len(feature_importances),
         "interventions": interventions
+    }
+
+@app.get("/api/historical-map")
+def get_historical_map():
+    return {
+        "status": "historical",
+        "message": "Historical accident intelligence from the UK DfT 2025 collision dataset.",
+        "points": map_data
     }

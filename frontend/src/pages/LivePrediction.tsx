@@ -165,14 +165,30 @@ export default function LivePrediction() {
           )}
           
           {result && !loading && (
-            <div className="bg-slate-800 p-8 rounded-xl border border-slate-700">
-              <h2 className="text-sm text-slate-400 font-semibold mb-2">PREDICTED SEVERITY</h2>
-              <div className={`text-4xl font-bold mb-6 ${result.predicted_class === 1 ? 'text-red-500' : result.predicted_class === 2 ? 'text-amber-500' : 'text-green-500'}`}>
-                {result.predicted_label || 'Unknown'}
+            <div className="bg-slate-800 p-8 rounded-xl border border-slate-700 shadow-xl">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-sm text-slate-400 font-semibold mb-1">PREDICTED SEVERITY</h2>
+                  <div className={`text-4xl font-bold ${result.predicted_class === 1 ? 'text-red-500' : result.predicted_class === 2 ? 'text-amber-500' : 'text-green-500'}`}>
+                    {result.predicted_label || 'Unknown'}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <h2 className="text-sm text-slate-400 font-semibold mb-1">RISK INTERPRETATION</h2>
+                  <div className={`text-2xl font-bold ${result.risk_level === 'CRITICAL' ? 'text-red-500' : result.risk_level === 'HIGH' ? 'text-amber-500' : 'text-green-500'}`}>
+                    {result.risk_level || 'UNKNOWN'}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mb-8">
+                <p className="text-slate-300 text-sm italic">
+                  Model prediction based on provided road and accident conditions.
+                </p>
               </div>
               
               <h3 className="text-sm text-slate-400 font-semibold mb-3">Model-Predicted Probabilities</h3>
-              <div className="space-y-4">
+              <div className="space-y-4 mb-8">
                 {Object.entries(result.probabilities || {}).map(([label, prob]: any) => (
                   <div key={label}>
                     <div className="flex justify-between text-sm mb-1">
@@ -184,6 +200,19 @@ export default function LivePrediction() {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="bg-slate-900 border border-slate-700 p-4 rounded-lg">
+                <h3 className="text-sm font-bold text-slate-200 mb-2">Important Model Factors</h3>
+                <ul className="text-sm text-slate-400 list-disc list-inside mb-3 space-y-1">
+                  <li>Time of day (Hour)</li>
+                  <li>Speed limit</li>
+                  <li>Urban vs Rural Environment</li>
+                  <li>Light & Weather Conditions</li>
+                </ul>
+                <p className="text-xs text-slate-500 italic">
+                  Note: These are model-relevant factors based on Random Forest feature importance, not proof of causation.
+                </p>
               </div>
             </div>
           )}

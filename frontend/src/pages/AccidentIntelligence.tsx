@@ -11,13 +11,13 @@ const badgeColor: Record<string, string> = {
   Engineered: 'bg-amber-500/20 text-amber-400',
 };
 
-export default function DataIntelligence() {
+export default function AccidentIntelligence() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    axios.get('http://localhost:8000/api/dataset/summary')
+    axios.get('http://localhost:8000/api/metrics')
       .then(res => {
         setData(res.data);
         setLoading(false);
@@ -56,8 +56,8 @@ export default function DataIntelligence() {
   return (
     <div className="p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold mb-1">Data Intelligence</h1>
-        <p className="text-slate-400">Dataset overview, quality analysis, and feature documentation.</p>
+        <h1 className="text-3xl font-bold mb-1">Accident Intelligence</h1>
+        <p className="text-slate-400">Powered by the UK DfT dataset and Random Forest model.</p>
       </div>
 
       {/* Dataset Overview Cards */}
@@ -82,7 +82,7 @@ export default function DataIntelligence() {
         <div className="grid grid-cols-3 gap-6 text-sm">
           <div><p className="text-slate-400">Filename</p><p className="font-mono text-blue-300 mt-1">{data.filename}</p></div>
           <div><p className="text-slate-400">Source</p><p className="text-slate-200 mt-1">{data.source}</p></div>
-          <div><p className="text-slate-400">Target Column</p><p className="text-slate-200 mt-1"><span className="font-mono bg-slate-700 px-2 py-0.5 rounded">{data.target}</span> — {data.target_description}</p></div>
+          <div><p className="text-slate-400">Target Column</p><p className="text-slate-200 mt-1"><span className="font-mono bg-slate-700 px-2 py-0.5 rounded">{data.target}</span> â€” {data.target_description}</p></div>
         </div>
       </div>
 
@@ -119,7 +119,7 @@ export default function DataIntelligence() {
             ))}
           </div>
           <div className="mt-5 p-3 bg-amber-900/30 border border-amber-700 rounded text-amber-300 text-xs">
-            ⚠️ Strong class imbalance — 75.8% Slight vs 1.5% Fatal. Model trained with <code>class_weight='balanced'</code> to compensate.
+            âš ï¸ Strong class imbalance â€” 75.8% Slight vs 1.5% Fatal. Model trained with <code>class_weight='balanced'</code> to compensate.
           </div>
         </div>
       </div>
@@ -171,6 +171,30 @@ export default function DataIntelligence() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Model Performance */}
+      <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
+        <h2 className="text-lg font-bold mb-4">Random Forest Model Performance</h2>
+        <p className="text-sm text-slate-400 mb-6">Actual evaluation metrics from the saved Data Science pipeline on the 20% test set.</p>
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-lg p-4 text-center">
+            <p className="text-3xl font-bold text-blue-400">{(data.accuracy * 100).toFixed(2)}%</p>
+            <p className="text-sm text-slate-400 mt-1">Accuracy</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-700 rounded-lg p-4 text-center">
+            <p className="text-3xl font-bold text-amber-400">{(data.precision_macro * 100).toFixed(2)}%</p>
+            <p className="text-sm text-slate-400 mt-1">Precision (Macro)</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-700 rounded-lg p-4 text-center">
+            <p className="text-3xl font-bold text-green-400">{(data.recall_macro * 100).toFixed(2)}%</p>
+            <p className="text-sm text-slate-400 mt-1">Recall (Macro)</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-700 rounded-lg p-4 text-center">
+            <p className="text-3xl font-bold text-purple-400">{(data.f1_macro * 100).toFixed(2)}%</p>
+            <p className="text-sm text-slate-400 mt-1">F1-Score (Macro)</p>
+          </div>
         </div>
       </div>
     </div>
