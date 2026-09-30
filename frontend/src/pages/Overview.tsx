@@ -6,16 +6,33 @@ import 'leaflet/dist/leaflet.css';
 
 export default function Overview() {
   const [data, setData] = useState<any>(null);
+  const [state, setState] = useState<any>(null);
 
   useEffect(() => {
-    const fetch = () => axios.get('http://localhost:8000/api/dashboard').then(res => setData(res.data)).catch(()=>{});
+    const fetch = () => {
+      axios.get('http://localhost:8000/api/dashboard').then(res => setData(res.data)).catch(()=>{});
+      axios.get('http://localhost:8000/api/state').then(res => setState(res.data)).catch(()=>{});
+    };
     fetch();
-    const interval = setInterval(fetch, 2000);
+    const interval = setInterval(fetch, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const handleStartSim = () => axios.post('http://localhost:8000/api/simulation/start');
-  const handleTest = () => axios.post('http://localhost:8000/api/simulation/near-miss');
+  const handleStartSim = () => {
+    if (!state?.simulation_active) {
+      axios.post('http://localhost:8000/api/simulation/start');
+    } else {
+      axios.post('http://localhost:8000/api/simulation/stop');
+    }
+  };
+  
+  const handleTest = () => {
+    axios.post('http://localhost:8000/api/simulation/near-miss');
+  };
+
+  const v = state?.vehicle || { latitude: 11.0168, longitude: 76.9558, speed: 0 };
+  const r = state?.risk || { total: 0, classification: 'UNKNOWN' };
+  const isActive = state?.simulation_active;
 
   return (
     <div className="space-y-6">
@@ -26,8 +43,13 @@ export default function Overview() {
           <p className="text-cyan-500/80 text-sm mt-1">Context-aware multimodal monitoring and predictive risk assessment</p>
         </div>
         <div className="flex space-x-3">
-          <button onClick={handleStartSim} className="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded shadow transition">Start Simulation</button>
-          <button onClick={handleTest} className="bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-500/30 px-4 py-2 rounded transition">Emergency Test</button>
+          <button onClick={handleStartSim} className={`${isActive ? 'bg-green-600 hover:bg-green-500' : 'bg-cyan-600 hover:bg-cyan-500'} text-white px-4 py-2 rounded shadow transition flex items-center space-x-2`}>
+            {isActive && <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>}
+            <span>{isActive ? 'Simulation Running' : 'Start Simulation'}</span>
+          </button>
+          <button onClick={handleTest} className="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white border border-red-500/30 px-4 py-2 rounded transition font-bold">
+            Emergency Test (Trigger Near-Miss)
+          </button>
         </div>
       </div>
 
@@ -54,29 +76,38 @@ export default function Overview() {
       <div className="bg-card1 border border-card2 rounded-xl h-[500px] flex flex-col overflow-hidden relative">
         <div className="p-4 bg-bg2 border-b border-card2 flex justify-between">
           <h2 className="font-bold flex items-center space-x-2 text-slate-200"><Navigation className="w-4 h-4 text-cyan-400" /><span>Live Highway Risk Map</span></h2>
-          <div className="flex space-x-3 text-xs">
+          <div className="flex space-x-3 text-xs items-center">
+            {isActive && <span className="text-green-400 animate-pulse mr-4 font-mono text-[10px]">VEHICLE TRACKING ACTIVE</span>}
             <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-green-500"></span><span>Low</span></span>
             <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-yellow-500"></span><span>Moderate</span></span>
             <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-orange-500"></span><span>High</span></span>
             <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-red-500"></span><span>Critical</span></span>
           </div>
         </div>
-        <div className="flex-1">
-          <MapContainer center={[11.0168, 76.9558]} zoom={12} className="h-full w-full" style={{ background: '#07111F' }}>
+        <div className="flex-1 relative">
+          <MapContainer center={[11.0168, 76.9558]} zoom={13} className="h-full w-full" style={{ background: '#07111F' }}>
             <TileLayer 
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
               className="map-tiles"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
             {/* The live vehicle marker */}
-            <CircleMarker center={[11.0168, 76.9558]} radius={8} pathOptions={{ color: '#EF4444', fillColor: '#EF4444', fillOpacity: 0.8 }}>
+            <CircleMarker 
+              center={[v.latitude, v.longitude]} 
+              radius={r.classification === 'CRITICAL' ? 12 : 8} 
+              pathOptions={{ 
+                color: r.classification === 'CRITICAL' ? '#EF4444' : r.classification === 'HIGH' ? '#F97316' : r.classification === 'MODERATE' ? '#F59E0B' : '#22C55E', 
+                fillColor: r.classification === 'CRITICAL' ? '#EF4444' : r.classification === 'HIGH' ? '#F97316' : r.classification === 'MODERATE' ? '#F59E0B' : '#22C55E', 
+                fillOpacity: 0.8 
+              }}
+            >
                <Popup className="bg-card1 text-slate-200 border-none rounded shadow-2xl">
                  <div className="text-sm">
-                   <p className="font-bold border-b border-card2 pb-1 mb-2 text-cyan-400">Vehicle ID: HV-1024</p>
-                   <p><span className="text-slate-400">Risk:</span> <strong className="text-red-400">81.4%</strong></p>
-                   <p><span className="text-slate-400">Status:</span> HIGH RISK</p>
-                   <p><span className="text-slate-400">Speed:</span> 87 km/h</p>
-                   <button className="mt-2 w-full bg-cyan-600/20 text-cyan-400 py-1 rounded border border-cyan-500/30">View Vehicle</button>
+                   <p className="font-bold border-b border-card2 pb-1 mb-2 text-cyan-400">Vehicle ID: {v.id || 'HV-1024'}</p>
+                   <p><span className="text-slate-400">Risk:</span> <strong className="text-red-400">{r.total.toFixed(1)}%</strong></p>
+                   <p><span className="text-slate-400">Status:</span> {r.classification}</p>
+                   <p><span className="text-slate-400">Speed:</span> {v.speed.toFixed(1)} km/h</p>
+                   <p><span className="text-slate-400">Coords:</span> {v.latitude.toFixed(4)}, {v.longitude.toFixed(4)}</p>
                  </div>
                </Popup>
             </CircleMarker>
