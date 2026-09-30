@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Car, Gauge, Activity, Compass, Thermometer, Cloud, AlignVerticalJustifyStart, BatteryCharging } from 'lucide-react';
+import { Car, Gauge, Activity, Compass, Thermometer, Cloud, AlertTriangle, BatteryCharging, TrendingUp } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function LiveMonitoring() {
@@ -56,7 +56,7 @@ export default function LiveMonitoring() {
           { label: 'Load', val: `${v.load.toFixed(1)}%`, icon: BatteryCharging },
           { label: 'Acceleration', val: `${v.acceleration} m/s²`, icon: Activity },
           { label: 'Brake Intensity', val: v.brake_intensity, icon: AlertTriangle },
-          { label: 'Tilt', val: `${v.tilt}°`, icon: AlignVerticalJustifyStart },
+          { label: 'Tilt', val: `${v.tilt}°`, icon: TrendingUp },
           { label: 'Temperature', val: `${v.temperature}°C`, icon: Thermometer },
           { label: 'Visibility', val: v.visibility, icon: Cloud },
           { label: 'GPS', val: `${v.latitude.toFixed(4)} N, ${v.longitude.toFixed(4)} E`, icon: Compass },
