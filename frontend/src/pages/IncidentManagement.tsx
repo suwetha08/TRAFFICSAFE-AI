@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { AlertTriangle, MapPin, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function IncidentManagement() {
   const [incidents, setIncidents] = useState<any[]>([]);
+  const [ack, setAck] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetch = () => axios.get('http://localhost:8000/api/lists').then(res => setIncidents(res.data.incidents)).catch(()=>{});
@@ -11,6 +14,8 @@ export default function IncidentManagement() {
     const interval = setInterval(fetch, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleAcknowledge = (id: string) => setAck([...ack, id]);
 
   return (
     <div className="space-y-6">
@@ -29,15 +34,19 @@ export default function IncidentManagement() {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {incidents.map((inc, i) => (
-          <div key={i} className="bg-card1 border border-red-500/30 p-5 rounded-xl shadow-lg relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+        {incidents.map((inc, i) => {
+          const isAck = ack.includes(inc.id) || inc.status === 'RESOLVED';
+          return (
+          <div key={i} className={`bg-card1 border ${isAck ? 'border-card2 opacity-60' : 'border-red-500/30 shadow-lg shadow-red-500/5'} p-5 rounded-xl relative overflow-hidden transition-all duration-500`}>
+            {!isAck && <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse"></div>}
             <div className="flex justify-between items-start mb-4 pl-2">
               <div>
                 <p className="text-xs text-slate-400 font-mono mb-1">{inc.id}</p>
-                <h3 className="text-lg font-bold text-slate-200">{inc.type}</h3>
+                <h3 className={`text-lg font-bold ${isAck ? 'text-slate-400' : 'text-slate-200'}`}>{inc.type}</h3>
               </div>
-              <span className="bg-red-500/20 text-red-500 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">{inc.severity}</span>
+              <span className={`${isAck ? 'bg-card2 text-slate-400' : 'bg-red-500/20 text-red-500'} text-xs font-bold px-2 py-1 rounded uppercase tracking-wider`}>
+                {isAck ? 'Acknowledged' : inc.severity}
+              </span>
             </div>
             
             <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm pl-2 mb-6">
@@ -48,12 +57,12 @@ export default function IncidentManagement() {
             </div>
 
             <div className="flex space-x-3 pl-2">
-              <button className="flex-1 bg-red-600 hover:bg-red-500 text-white py-2 rounded text-sm font-bold transition">Dispatch</button>
-              <button className="flex-1 bg-card2 hover:bg-slate-700 text-slate-200 py-2 rounded text-sm font-bold transition">Acknowledge</button>
-              <button className="flex-1 bg-transparent hover:bg-card2 border border-card2 text-slate-400 py-2 rounded text-sm font-bold transition">View Details</button>
+              <button onClick={() => navigate('/emergency-response')} disabled={isAck} className={`flex-1 py-2 rounded text-sm font-bold transition ${isAck ? 'bg-card2 text-slate-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 text-white'}`}>Dispatch</button>
+              <button onClick={() => handleAcknowledge(inc.id)} disabled={isAck} className={`flex-1 py-2 rounded text-sm font-bold transition ${isAck ? 'bg-card2 text-slate-500 cursor-not-allowed' : 'bg-card2 hover:bg-slate-700 text-slate-200'}`}>Acknowledge</button>
+              <button onClick={() => navigate('/explainable-ai')} className="flex-1 bg-transparent hover:bg-card2 border border-card2 text-slate-400 py-2 rounded text-sm font-bold transition">View Details</button>
             </div>
           </div>
-        ))}
+        )})}
         {incidents.length === 0 && (
           <div className="col-span-2 p-12 text-center text-slate-500 bg-card1 border border-card2 rounded-xl">
             No active incidents detected.
