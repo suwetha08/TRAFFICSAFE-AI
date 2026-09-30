@@ -63,7 +63,11 @@ export default function Overview() {
         </div>
         <div className="flex-1">
           <MapContainer center={[11.0168, 76.9558]} zoom={12} className="h-full w-full" style={{ background: '#07111F' }}>
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+            <TileLayer 
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+              className="map-tiles"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
             {/* The live vehicle marker */}
             <CircleMarker center={[11.0168, 76.9558]} radius={8} pathOptions={{ color: '#EF4444', fillColor: '#EF4444', fillOpacity: 0.8 }}>
                <Popup className="bg-card1 text-slate-200 border-none rounded shadow-2xl">
