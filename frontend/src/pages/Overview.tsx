@@ -35,14 +35,14 @@ export default function Overview() {
   const isActive = state?.simulation_active;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-end">
+    <div className="flex flex-col h-full space-y-6 pb-2">
+      <div className="flex justify-between items-end flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold text-slate-100">HIGHWAY GUARDIAN</h1>
           <p className="text-slate-400 mt-1">Real-Time Heavy Vehicle Safety Intelligence</p>
           <p className="text-cyan-500/80 text-sm mt-1">Context-aware multimodal monitoring and predictive risk assessment</p>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex space-x-3 flex-shrink-0">
           <button onClick={handleStartSim} className={`${isActive ? 'bg-green-600 hover:bg-green-500' : 'bg-cyan-600 hover:bg-cyan-500'} text-white px-4 py-2 rounded shadow transition flex items-center space-x-2`}>
             {isActive && <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>}
             <span>{isActive ? 'Simulation Running' : 'Start Simulation'}</span>
@@ -53,7 +53,7 @@ export default function Overview() {
         </div>
       </div>
 
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid grid-cols-6 gap-4 flex-shrink-0">
         {[
           { label: 'Active Vehicles', value: data?.active_vehicles || 0, icon: Car, color: 'text-cyan-400' },
           { label: 'High-Risk Vehicles', value: data?.high_risk_vehicles || 0, icon: ShieldAlert, color: 'text-amber-400' },
@@ -73,8 +73,8 @@ export default function Overview() {
         ))}
       </div>
 
-      <div className="bg-card1 border border-card2 rounded-xl h-[500px] flex flex-col overflow-hidden relative">
-        <div className="p-4 bg-bg2 border-b border-card2 flex justify-between">
+      <div className="bg-card1 border border-card2 rounded-xl flex-1 flex flex-col overflow-hidden relative min-h-[400px]">
+        <div className="p-4 bg-bg2 border-b border-card2 flex justify-between flex-shrink-0">
           <h2 className="font-bold flex items-center space-x-2 text-slate-200"><Navigation className="w-4 h-4 text-cyan-400" /><span>Live Highway Risk Map</span></h2>
           <div className="flex space-x-3 text-xs items-center">
             {isActive && <span className="text-green-400 animate-pulse mr-4 font-mono text-[10px]">VEHICLE TRACKING ACTIVE</span>}
