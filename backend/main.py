@@ -69,9 +69,54 @@ risk_state = {
     "classification": "LOW"
 }
 
-near_misses = []
-incidents = []
-alerts = []
+near_misses = [
+    {
+        "id": "NM-8821",
+        "timestamp": "09:15:18",
+        "location": "Segment 41",
+        "type": "Sudden Steering",
+        "severity": "Medium",
+        "speed": "74 km/h",
+        "weather": "NONE"
+    }
+]
+
+incidents = [
+    {
+        "id": "INC-0082",
+        "timestamp": "09:18:32",
+        "severity": "CRITICAL",
+        "type": "Potential Collision Risk",
+        "vehicle": "HV-1024",
+        "location": "Highway Segment 42",
+        "confidence": 94.1,
+        "status": "ACTIVE",
+        "coordinates": [11.0168, 76.9558]
+    },
+    {
+        "id": "INC-0081",
+        "timestamp": "08:45:10",
+        "severity": "HIGH",
+        "type": "Harsh Braking Event",
+        "vehicle": "HV-0831",
+        "location": "Highway Segment 18",
+        "confidence": 88.5,
+        "status": "RESOLVED",
+        "coordinates": [11.0210, 76.9400]
+    }
+]
+
+alerts = [
+    {
+        "id": "ALT-HV-1024-CRITICAL",
+        "timestamp": "09:18:35",
+        "vehicle": "HV-1024",
+        "risk": 91.8,
+        "type": "CRITICAL SAFETY ALERT",
+        "location": "Highway Segment 42",
+        "action": "Reduce speed and initiate safety response."
+    }
+]
 
 # SIMULATION ENGINE
 def calculate_carf():
